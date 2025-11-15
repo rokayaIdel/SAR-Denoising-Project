@@ -205,3 +205,22 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# ETL generated folders
+patches/
+processed/
+raw/
+
+# ignore dataset files
+data/
+
+# .png, .jpg, .jpeg files
+*.png
+*.jpg
+*.jpeg
+
+# shutil file
+shutil
+
+# ETL.ipynb
+ETL.ipynb
