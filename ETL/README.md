@@ -20,3 +20,16 @@ The ETL process generates the following output folders and files:
 - `data/pickles/patches.pkl`: Contains 64x64 patches of noisy and clean images as NumPy arrays (float32).
 - `data/processed`: Directory containing processed full images, the datasets with clean and noisy images.
 - `data/patches`: Directory containing 64x64 patches of clean and noisy images.
+
+## TO USE THE PICKLE FILES
+```python
+import pickle
+
+# file in data/pickles/patches.pkl
+with open("data/pickles/patches.pkl", "rb") as f:
+	patches = pickle.load(f)
+
+# file in data/pickles/processed.pkl
+with open("data/pickles/processed.pkl", "rb") as f:
+	processed = pickle.load(f)
+```
