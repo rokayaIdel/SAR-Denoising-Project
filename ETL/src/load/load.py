@@ -89,35 +89,95 @@ class Load:
     def create_processed_pickle(processed_dir="data/processed",
                                 pickle_path="data/pickles/processed.pkl"):
 
-        # create directory if not exists
         parent_dir = os.path.dirname(pickle_path)
-        if parent_dir :
+        if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
 
+        DATA = {}  # dictionnaire hiérarchique
 
-        X, Y = Load.load_processed_images(processed_dir)
+        files = Load.get_images_list(processed_dir)
 
+        for img_path in files:
+            
+            # exemple: div2k/lr4/DIV2K_valid_LR_bicubic/X4/img_clean.png
+            rel = os.path.relpath(img_path, processed_dir)
+            parts = rel.split(os.sep)  # ["div2k", "lr4", "DIV2K_valid...", "X4", "img_clean.png"]
+
+            # clean or noisy ?
+            is_clean = "_clean" in parts[-1]
+            is_noisy = "_noisy" in parts[-1]
+
+            if not (is_clean or is_noisy):
+                continue
+
+            # Load image
+            img = Load.load_image(img_path)
+
+            # Build nested dict automatically
+            ref = DATA
+            for p in parts[:-1]:  # all folders
+                ref = ref.setdefault(p, {})
+
+            # Final level: store clean or noisy
+            key = "clean" if is_clean else "noisy"
+            ref.setdefault(key, []).append(img)
+
+        # Save pickle
         with open(pickle_path, "wb") as f:
-            pickle.dump((X, Y), f)
+            pickle.dump(DATA, f)
 
-        print(f"[OK] Pickle processed créé → {pickle_path}")
+        print(f"[OK] Pickle processed (hierarchical) → {pickle_path}")
 
     # -----------------------------------------------------
     # 2. PATCHES → générer pickle
     # -----------------------------------------------------
     @staticmethod
     def create_patches_pickle(patches_dir="data/patches",
-                              pickle_path="data/pickles/patches.pkl"):
-        # create directory if not exists
+                            pickle_path="data/pickles/patches.pkl"):
+
         parent_dir = os.path.dirname(pickle_path)
-        if parent_dir :
+        if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
-            
-        X, Y = Load.load_patches(patches_dir)
+
+        DATA = {}
+
+        clean_root = os.path.join(patches_dir, "clean")
+        noisy_root = os.path.join(patches_dir, "noisy")
+
+        clean_files = Load.get_images_list(clean_root)
+
+        for clean_path in clean_files:
+
+            # relative → bsd68/patch_0.png, or div2k/lr4/.../patch_X.png
+            rel = os.path.relpath(clean_path, clean_root)
+            parts = rel.split(os.sep)
+
+            # noisy path
+            noisy_path = os.path.join(noisy_root, rel)
+            if not os.path.exists(noisy_path):
+                print(f"[WARNING] Noisy missing for {rel}")
+                continue
+
+            clean = Load.load_image(clean_path)
+            noisy = Load.load_image(noisy_path)
+
+            # Build nested dict
+            ref = DATA
+            for p in parts[:-1]:  # folders
+                ref = ref.setdefault(p, {})
+
+            ref.setdefault("clean", []).append(clean)
+            ref.setdefault("noisy", []).append(noisy)
 
         with open(pickle_path, "wb") as f:
-            pickle.dump((X, Y), f)
-        print(f"[OK] Pickle patches créé → {pickle_path}")
+            pickle.dump(DATA, f)
+
+        print(f"[OK] Pickle patches (hierarchical) → {pickle_path}")
+
+
+
+
+
 
     # -----------------------------------------------------
     # 3. Load depuis pickle
