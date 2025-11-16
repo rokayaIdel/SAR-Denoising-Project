@@ -8,7 +8,7 @@ class Transform:
     # 1. Trouver toutes les images RAW : equivalent to bash : find data/raw -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \)
     # ---------------------------------------------
     @staticmethod
-    def get_images_list(directory):
+    def get_images_list(directory="data/raw"):
         image_extensions = ('.png', '.jpg', '.jpeg')
         image_paths = []
 

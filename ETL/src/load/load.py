@@ -93,40 +93,48 @@ class Load:
         if parent_dir:
             os.makedirs(parent_dir, exist_ok=True)
 
-        DATA = {}  # dictionnaire hiérarchique
+        DATA = {}
 
         files = Load.get_images_list(processed_dir)
 
-        for img_path in files:
-            
-            # exemple: div2k/lr4/DIV2K_valid_LR_bicubic/X4/img_clean.png
-            rel = os.path.relpath(img_path, processed_dir)
-            parts = rel.split(os.sep)  # ["div2k", "lr4", "DIV2K_valid...", "X4", "img_clean.png"]
+        # on ne traite que les fichiers _clean
+        clean_files = [f for f in files if "_clean" in os.path.basename(f)]
 
-            # clean or noisy ?
-            is_clean = "_clean" in parts[-1]
-            is_noisy = "_noisy" in parts[-1]
+        for clean_path in clean_files:
+            # chemin relatif par rapport à processed_dir
+            rel = os.path.relpath(clean_path, processed_dir)
+            parts = rel.split(os.sep)   # ["div2k", "lr4", "...", "X4", "xxx_clean.png"]
 
-            if not (is_clean or is_noisy):
+            filename = parts[-1]
+            dirs = parts[:-1]
+
+            # construire chemin noisy correspondant
+            noisy_filename = filename.replace("_clean", "_noisy")
+            noisy_rel = os.path.join(*dirs, noisy_filename) if dirs else noisy_filename
+            noisy_path = os.path.join(processed_dir, noisy_rel)
+
+            if not os.path.exists(noisy_path):
+                print(f"[WARNING] Noisy missing for {noisy_rel}, skipped.")
                 continue
 
-            # Load image
-            img = Load.load_image(img_path)
+            # charger clean + noisy
+            clean_img = Load.load_image(clean_path)
+            noisy_img = Load.load_image(noisy_path)
 
-            # Build nested dict automatically
+            # construire dict imbriqué selon la hiérarchie de dossiers
             ref = DATA
-            for p in parts[:-1]:  # all folders
+            for p in dirs:
                 ref = ref.setdefault(p, {})
 
-            # Final level: store clean or noisy
-            key = "clean" if is_clean else "noisy"
-            ref.setdefault(key, []).append(img)
+            # au niveau final : listes alignées
+            ref.setdefault("clean", []).append(clean_img)
+            ref.setdefault("noisy", []).append(noisy_img)
 
-        # Save pickle
+        # sauvegarde pickle
         with open(pickle_path, "wb") as f:
             pickle.dump(DATA, f)
 
-        print(f"[OK] Pickle processed (hierarchical) → {pickle_path}")
+        print(f"[OK] Pickle processed (hierarchical, aligned) → {pickle_path}")
 
     # -----------------------------------------------------
     # 2. PATCHES → générer pickle
@@ -148,32 +156,37 @@ class Load:
 
         for clean_path in clean_files:
 
-            # relative → bsd68/patch_0.png, or div2k/lr4/.../patch_X.png
+            # rel = chemin relatif à clean/
+            # ex: "bsd68/patch_001.png" ou "div2k/lr4/X4/patch_004.png"
             rel = os.path.relpath(clean_path, clean_root)
             parts = rel.split(os.sep)
+            filename = parts[-1]
+            dirs = parts[:-1]
 
-            # noisy path
+            # noisy path = même structure + même nom de fichier
             noisy_path = os.path.join(noisy_root, rel)
+
             if not os.path.exists(noisy_path):
-                print(f"[WARNING] Noisy missing for {rel}")
+                print(f"[WARNING] Noisy missing for {rel}, skipped.")
                 continue
 
-            clean = Load.load_image(clean_path)
-            noisy = Load.load_image(noisy_path)
+            clean_img = Load.load_image(clean_path)
+            noisy_img = Load.load_image(noisy_path)
 
-            # Build nested dict
+            # construire dictionnaire hiérarchique selon les dossiers
             ref = DATA
-            for p in parts[:-1]:  # folders
+            for p in dirs:
                 ref = ref.setdefault(p, {})
 
-            ref.setdefault("clean", []).append(clean)
-            ref.setdefault("noisy", []).append(noisy)
+            # append paire alignée
+            ref.setdefault("clean", []).append(clean_img)
+            ref.setdefault("noisy", []).append(noisy_img)
 
+        # sauvegarde pickle
         with open(pickle_path, "wb") as f:
             pickle.dump(DATA, f)
 
-        print(f"[OK] Pickle patches (hierarchical) → {pickle_path}")
-
+        print(f"[OK] Pickle patches (hierarchical, aligned) → {pickle_path}")
 
 
 
