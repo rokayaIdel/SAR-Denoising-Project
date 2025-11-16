@@ -24,7 +24,7 @@ if __name__ == "__main__":
     for dir_name in dirs_to_clean:
         if os.path.exists(dir_name):
             shutil.rmtree(dir_name)
-    Transform.generate_patches_for_all_images("data/raw", patch_size=64, stride=32, L=5)
+    Transform.generate_patches_for_all_images("data/raw", patch_size=64, stride=32, L=3)
 
     dirs_to_clean = ["data/pickles"]
     for dir_name in dirs_to_clean:

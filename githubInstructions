@@ -29,3 +29,7 @@ monde doit synchroniser son fork si nécessaire :
 
 git checkout main
 git pull
+
+# Commandes intéressantes
+# Voir les branches locales, et la branche courante
+git branch
