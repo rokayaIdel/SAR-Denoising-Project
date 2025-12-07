@@ -24,7 +24,9 @@ if __name__ == "__main__":
     for dir_name in dirs_to_clean:
         if os.path.exists(dir_name):
             shutil.rmtree(dir_name)
-    Transform.generate_patches_for_all_images("data/raw", patch_size=64, stride=32, L=3)
+
+    valueOfL = 5
+    Transform.generate_patches_for_all_images("data/raw", patch_size=64, stride=32, L=valueOfL)
 
     dirs_to_clean = ["data/pickles"]
     for dir_name in dirs_to_clean:
@@ -34,5 +36,9 @@ if __name__ == "__main__":
     print("=== LOAD → PICKLE ===")
     Load.create_processed_pickle()
     Load.create_patches_pickle()
+
+    # create a file named f'L_{valueOfL}'.txt in data/pickles to indicate the value of L used
+    with open(os.path.join("data", 'L.txt'), 'w') as f:
+        f.write(str(valueOfL))
 
     print("=== DONE ===")
