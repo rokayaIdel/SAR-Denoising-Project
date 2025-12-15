@@ -1,5 +1,8 @@
 # SAR-Denoising-Project
 From Optimization to Deep Learning: Unrolled Neural Networks for Image Despeckling
+This project implements an unrolled neural network  for SAR image denoising.
+The model is trained on image patches generated.The unrolled architecture mimics an iterative optimization algorithm,
+where each layer corresponds to one iteration with learned parameters.
 
 # Instructions GitHub : githubInstructions
 
