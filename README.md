@@ -1,74 +1,64 @@
-## Task: Multi-L ETL + Log-Domain Despeckling with a Blind Denoiser (Fine-Tuning & Evaluation)
+## Tâche : ETL Multi-L + Débruitage dans le domaine logarithmique avec un débruiteur aveugle (Affinage & Évaluation) – Rokaya Id El Mouedden
 
-### Overview
-My contribution focuses on evaluating how a **blind denoiser pre-trained for additive noise** behaves on **SAR speckle noise across multiple numbers of looks \(L\)**. To make speckle noise compatible with additive-noise denoisers, I extended the ETL pipeline to generate **multi-\(L\)** datasets and applied a **logarithmic (homomorphic) transform** to move from the intensity domain to the log domain, where the multiplicative model becomes approximately additive.
+### Vue d’ensemble
+Ma contribution se concentre sur l’évaluation du comportement d’un **débruiteur aveugle pré-entraîné pour un bruit additif** face au **bruit de speckle SAR pour différents nombres de looks \(L\)**. Afin de rendre le bruit de speckle compatible avec des débruiteurs pour bruit additif, j’ai étendu le pipeline ETL pour générer des jeux de données **multi-\(L\)** et appliqué une **transformation logarithmique (homomorphe)** permettant de passer du domaine d’intensité au domaine logarithmique, où le modèle multiplicatif devient approximativement additif.
 
-This work follows a three-step experimental workflow:  
-(1) modification of the ETL pipeline to generate multi-\(L\) pickle datasets,  
-(2) adoption of a pre-trained blind denoiser (additive-noise setting) and reformulation of the SAR despeckling problem in the log domain,  
-(3) fine-tuning and evaluation using standard image-quality metrics (PSNR, SSIM).
-
-> **References to add later**  
-> **[REF-A]** Kai Zhang et al., blind denoising with deep CNNs (pre-trained additive-noise model).  
-> **[REF-B]** Log-domain / homomorphic approaches for SAR speckle modeling.  
-> **[REF-C]** Variance-stabilizing transforms (e.g., Yeo–Johnson) for non-Gaussian noise.
+Ce travail suit un protocole expérimental en trois étapes :  
+(1) modification du pipeline ETL pour générer des jeux de données pickle multi-\(L\),  
+(2) adoption d’un débruiteur aveugle pré-entraîné (cadre bruit additif) et reformulation du problème de débruitage SAR dans le domaine logarithmique,  
+(3) affinage (fine-tuning) et évaluation à l’aide de métriques standards de qualité d’image (PSNR, SSIM).
 
 ---
 
-### Multi-L Data Generation (ETL Modification)
-The ETL pipeline was modified to automatically generate datasets indexed by the number of looks \(L \in \{1,2,4,8\}\), allowing the study of model behavior under both high-speckle (small \(L\)) and low-speckle (large \(L\)) regimes. For each value of \(L\), the pipeline outputs pickle files stored under `ETL/data/pickles/`:
+### Génération de données Multi-L (Modification de l’ETL)
+Le pipeline ETL a été modifié afin de générer automatiquement des jeux de données indexés par le nombre de looks \(L \in \{1,2,4,8\}\), permettant d’étudier le comportement du modèle aussi bien en régime de fort speckle (petits \(L\)) qu’en régime de faible speckle (grands \(L\)). Pour chaque valeur de \(L\), le pipeline produit des fichiers pickle stockés dans `ETL/data/pickles/` :
 
-- `processed_L{L}.pkl`: noisy and clean **full SAR images**, stored as float32 NumPy arrays.  
-- `patches_L{L}.pkl`: noisy and clean **64×64 SAR patches**, stored as float32 NumPy arrays.
+- `processed_L{L}.pkl` : images SAR **complètes**, bruitées et propres, stockées sous forme de tableaux NumPy float32.  
+- `patches_L{L}.pkl` : **patchs SAR 64×64**, bruités et propres, stockés sous forme de tableaux NumPy float32.
 
-The SAR intensity model is defined as  
-\( I = X \cdot N \), with \( N \sim \Gamma(L,L) \), where \( \mathbb{E}[N]=1 \) and \( \mathrm{Var}(N)=1/L \). As \(L\) increases, the Gamma distribution converges toward a Gaussian distribution, which motivates analyzing performance across multiple \(L\) values.
+Le modèle d’intensité SAR est défini par  
+\( I = X \cdot N \), avec \( N \sim \Gamma(L,L) \), où \( \mathbb{E}[N]=1 \) et \( \mathrm{Var}(N)=1/L \). Lorsque \(L\) augmente, la loi Gamma converge vers une distribution gaussienne, ce qui motive l’analyse des performances pour plusieurs valeurs de \(L\).
 
 ---
 
-### Log-Domain Reformulation (Homomorphic Transform)
-Blind denoisers such as DnCNN are designed for additive noise models \( y = x + \varepsilon \), while SAR speckle follows a multiplicative model. Applying a logarithmic transform yields  
+### Reformulation dans le domaine logarithmique (Transformation homomorphe)
+Les débruiteurs aveugles tels que DnCNN sont conçus pour des modèles de bruit additif \( y = x + \varepsilon \), tandis que le speckle SAR suit un modèle multiplicatif. L’application d’une transformation logarithmique conduit à  
 \( \log(I+\epsilon) = \log(X+\epsilon) + \log(N) \),  
-thus converting multiplicative speckle into additive noise in the log domain. A small constant \( \epsilon \) is introduced for numerical stability. After denoising, the inverse transform is applied as  
+convertissant ainsi le speckle multiplicatif en bruit additif dans le domaine logarithmique. Une petite constante \( \epsilon \) est introduite pour assurer la stabilité numérique. Après le débruitage, la transformation inverse est appliquée selon  
 \( \hat{X} = \exp(\hat{x}_{\log}) - \epsilon \).  
-This homomorphic approach enables the direct use of additive-noise denoisers on SAR data (see **[REF-B]**).
+Cette approche homomorphe permet l’utilisation directe de débruiteurs pour bruit additif sur des données SAR (voir **[REF-B]**).
 
 ---
 
-### Pre-trained Blind Denoiser and Fine-Tuning
-A blind denoising CNN pre-trained on additive noise, following the work of Kai Zhang et al. (**[REF-A]**), was used as a baseline. Although the log transform yields additive noise, the distribution of \( \log(N) \) remains asymmetric, biased, and heavy-tailed for small values of \(L\). To reduce this distribution mismatch, the model was fine-tuned on log-domain SAR data using noisy/clean patch pairs generated by the modified ETL pipeline.
+### Débruiteur aveugle pré-entraîné et affinage
+Un CNN de débruitage aveugle pré-entraîné sur du bruit additif, suivant les travaux de Kai Zhang et al. (**[REF-A]**), a été utilisé comme base de référence. Bien que la transformation logarithmique rende le bruit additif, la distribution de \( \log(N) \) demeure asymétrique, biaisée et à queues lourdes pour de petites valeurs de \(L\). Afin de réduire ce décalage de distribution, le modèle a été affiné sur des données SAR dans le domaine logarithmique à l’aide de paires de patchs bruités/propre générées par le pipeline ETL modifié.
 
 ---
 
-### Evaluation Protocol
-After denoising in the log domain and applying the inverse exponential transform, performance was evaluated in the intensity domain using **PSNR (dB)** and **SSIM**. Results were analyzed separately for each value of \(L\), allowing comparison between noisy inputs and denoised outputs after fine-tuning.
+### Protocole d’évaluation
+Après le débruitage dans le domaine logarithmique et l’application de la transformation exponentielle inverse, les performances ont été évaluées dans le domaine d’intensité à l’aide du **PSNR (dB)** et du **SSIM**. Les résultats ont été analysés séparément pour chaque valeur de \(L\), permettant de comparer les entrées bruitées et les sorties débruitées après affinage.
 
 ---
 
-### Discussion and Limitations
-The obtained denoising performance was moderate. This behavior can be explained by several factors:  
-(i) the log-speckle noise distribution deviates significantly from Gaussianity, especially for small \(L\);  
-(ii) the log transform introduces asymmetry and bias in the noise statistics;  
-(iii) the nonlinear exponential inverse transform amplifies small log-domain errors;  
-(iv) optimization in the log domain does not directly correspond to optimal PSNR or SSIM in the intensity domain;  
-(v) the low-\(L\) regime is intrinsically more challenging due to high speckle variance.
+### Discussion et limites
+Les performances de débruitage obtenues sont modérées. Ce comportement s’explique par plusieurs facteurs :  
+(i) la distribution du bruit de speckle dans le domaine logarithmique s’écarte fortement de la gaussienne, en particulier pour de petits \(L\) ;  
+(ii) la transformation logarithmique introduit une asymétrie et un biais dans les statistiques du bruit ;  
+(iii) la transformation inverse exponentielle amplifie les petites erreurs du domaine logarithmique ;  
+(iv) l’optimisation dans le domaine logarithmique ne correspond pas directement à l’optimisation du PSNR ou du SSIM dans le domaine d’intensité ;  
+(v) le régime de faible \(L\) est intrinsèquement plus difficile en raison de la forte variance du speckle.
 
 ---
 
-### Perspectives and Future Improvements
-Potential improvements include the use of more appropriate variance-stabilizing transforms (such as Yeo–Johnson or generalized log transforms, see **[REF-B]**), robust loss functions tailored to heavy-tailed noise, and SAR-specific deep or unrolled models derived directly from the Gamma noise likelihood, in line with the optimization-to-deep-learning philosophy of this project.
+### Perspectives et améliorations futures
+Des améliorations potentielles incluent l’utilisation de transformations de stabilisation de variance plus adaptées (telles que Yeo–Johnson ou des transformations logarithmiques généralisées, voir **[REF-B]**), des fonctions de perte robustes adaptées aux bruits à queues lourdes, ainsi que des modèles profonds spécifiques au SAR ou des modèles déroulés dérivés directement de la vraisemblance Gamma du bruit, en cohérence avec la philosophie optimisation-vers-apprentissage profond de ce projet.
 
-## References
+## Références
 
 [REF-A] K. Zhang, W. Zuo, Y. Chen, D. Meng, L. Zhang,  
 "Beyond a Gaussian Denoiser: Residual Learning of Deep CNN for Image Denoising",  
 *IEEE Transactions on Image Processing*, 2017.
 
-[REF-B] X. Hu, M. Zhu, D. Stanković, Z. Feng, S. Mao, and L. Stanković,  
+[REF-B] X. Hu, M. Zhu, D. Stanković, Z. Feng, S. Mao, et L. Stanković,  
 "SAR Despeckling via Log–Yeo–Johnson Transformation and Sparse Representation",  
 *arXiv preprint* arXiv:2412.18121, 2024.
-
-
-
-
-
