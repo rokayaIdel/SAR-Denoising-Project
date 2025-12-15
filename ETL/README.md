@@ -1,16 +1,35 @@
-# HOW TO USE THE ETL SCRIPTS
+## Scripts ETL pour le débruitage SAR Multi-L
 
-This directory contains scripts to extract, transform, and load (ETL) SAR data for denoising projects (for each number of looks L) Below are the instructions on how to use these scripts effectively.
+Ce répertoire contient des scripts permettant **d’extraire, transformer et charger (ETL)** des données SAR pour des expériences de débruitage, pour **chaque nombre de looks \(L\)**. Ces scripts sont conçus pour générer des jeux de données dans le domaine logarithmique et pour soutenir l’affinage (fine-tuning) ainsi que l’évaluation de modèles profonds de débruitage.
 
-## Prerequisites
-Docker, Docker Compose must be installed on your machine. Ensure you have the necessary permissions to run Docker commands.
+### Structure du répertoire et rôle des scripts
 
-## Launching the ETL Process
-1. Open a terminal and navigate to the `SAR-Denoising-Project/ETL` directory.
-2. Run the following command to start the ETL process using Docker Compose:
+- `create_multil_log_pkl.py`  
+  Génère des jeux de données SAR **multi-\(L\)** dans le **domaine logarithmique**.  
+
+- `dataset_log_multiL.py`  
+  Définit une **classe de jeu de données compatible PyTorch** pour le chargement des données SAR dans le domaine logarithmique.  
+  Elle prend en charge :
+  - le chargement des fichiers pickle multi-\(L\),
+  - l’appariement des échantillons bruités et propres,
+  - la préparation des données pour l’entraînement et la validation.
+
+- `train_finetune.py`  
+  Réalise l’**affinage (fine-tuning) d’un débruiteur aveugle pré-entraîné** (par exemple DnCNN) sur des patchs SAR dans le domaine logarithmique.  
+  Le script permet :
+  - le gel partiel des couches du réseau,
+  - l’entraînement sur plusieurs valeurs de \(L\),
+  - la sauvegarde des points de contrôle (checkpoints) du modèle affiné.
+
+- `transform/`  
+  Contient des utilitaires de transformation auxiliaires utilisés dans le processus ETL.
+
+## Prérequis
+Docker et Docker Compose doivent être installés sur votre machine.  
+Assurez-vous de disposer des autorisations nécessaires pour exécuter des commandes Docker.
+
+## Lancement du processus ETL
+1. Ouvrir un terminal et se placer dans le répertoire `SAR-Denoising-Project/ETL`.
+2. Exécuter la commande suivante pour lancer le processus ETL à l’aide de Docker Compose :
    ```bash
    docker-compose up --build
-   ```
-3. The ETL scripts will execute inside the Docker container, processing the SAR data as defined in the `docker-compose.yml` file.
-4. Once the process is complete, the processed data will be available in the `data/pickles` directory.
-
