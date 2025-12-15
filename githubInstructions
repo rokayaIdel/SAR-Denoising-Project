@@ -1,0 +1,35 @@
+1) Cloner le repository
+
+git clone https://github.com/rokayaIdel/SAR-Denoising-Project.git
+cd SAR-Denoising-Project
+
+2) Créer ta branche (A répéter avant chaque nouvelle tâche)
+
+git checkout main
+git pull
+git checkout -b pipeline-name-yourfullname
+
+3) Commits
+
+git add .
+git commit -m "ETL: ajout cleaning + feature engineering"
+
+4) Pusher ta branche sur GitHub
+
+git push -u origin pipeline-name-yourfullname
+
+5) Créer une Pull Request
+
+Va sur GitHub, dans le repository REPO, et crée une Pull Request de ta branche "pipeline-name-yourfullname" vers "main". Ajoute une description claire de tes changements et demande une revue si nécessaire.
+
+6) Process après la PR
+
+Une fois la PR approuvée, tu peux la merger via l'interface GitHub. Ensuite, n'oublie pas de mettre à jour ta branche locale main, et tout le 
+monde doit synchroniser son fork si nécessaire :
+
+git checkout main
+git pull
+
+# Commandes intéressantes
+# Voir les branches locales, et la branche courante
+git branch

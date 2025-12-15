@@ -1,0 +1,9 @@
+version: "3.8"
+
+services:
+  etl:
+    build: .
+    volumes:
+      - ./:/app
+    container_name: sar_etl
+
